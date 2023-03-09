@@ -53,3 +53,19 @@ class PostURLTests(TestCase):
                 with self.subTest(address=address):
                     response = self.authorized_client.get(address)
                     self.assertEqual(response.status_code, 200)
+
+    def test_url_access_for_all(self):
+        """Страницы, доступные всем пользователям"""
+        for address, access, in self.access_url_address_map.items():
+            if access == 'all':
+                with self.subTest(address=address):
+                    response = self.authorized_client.get(address)
+                    self.assertEqual(response.status_code, 200)
+
+    def test_url_access_for_author_only(self):
+        """Страницы, доступные только автору"""
+        for address, access, in self.access_url_address_map.items():
+            if access == 'author':
+                with self.subTest(address=address):
+                    response = self.authorized_client.get(address)
+                    self.assertEqual(response.status_code, 200)
