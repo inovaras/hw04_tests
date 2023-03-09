@@ -5,7 +5,7 @@ from ..models import Group, Post, User
 
 USERNAME = 'author'
 SLUG = 'some_slug'
-TEXT = 'Проверочный текст'
+TEXT = 'some text'
 
 
 class PostURLTests(TestCase):
@@ -17,6 +17,21 @@ class PostURLTests(TestCase):
         cls.post = Post.objects.create(
             text=TEXT, author=cls.user, group=cls.group
         )
+        cls.access_url_address_map = {
+            '/': 'all',
+            f'/group/{cls.group.slug}/': 'all',
+            f'/profile/{cls.user.username}/': 'all',
+            f'/posts/{cls.post.id}/': 'all',
+            '/create/': 'authorized',
+            f'/posts/{cls.post.id}/edit/': 'author',
+        }
+        cls.template_url_name = {
+            f'/group/{cls.group.slug}/': 'posts/group_list.html',
+            f'/profile/{cls.user.username}/': 'posts/profile.html',
+            f'/posts/{cls.post.id}/': 'posts/post_detail.html',
+            '/create/': 'posts/create.html',
+            f'/posts/{cls.post.id}/edit/': 'posts/create.html'
+        }
 
     def setUp(self):
         self.guest_client = Client()
@@ -25,15 +40,16 @@ class PostURLTests(TestCase):
 
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
-        template_url_name = (
-            (f'/group/{self.group.slug}/', 'posts/group_list.html'),
-            (f'/profile/{self.user.username}/', 'posts/profile.html'),
-            (f'/posts/{self.post.id}/', 'posts/post_detail.html'),
-            ('/create/', 'posts/create.html'),
-            (f'/posts/{self.post.id}/edit/', 'posts/create.html'),
-        )
 
-        for address, template in template_url_name:
+        for address, template in self.template_url_name.items():
             with self.subTest(address=address):
                 response = self.authorized_client.get(address)
                 self.assertTemplateUsed(response, template)
+
+    def test_url_access_for_authorized_only(self):
+        """Страницы, доступные только авторизованным пользователям"""
+        for address, access, in self.access_url_address_map.items():
+            if access == 'authorized':
+                with self.subTest(address=address):
+                    response = self.authorized_client.get(address)
+                    self.assertEqual(response.status_code, 200)
