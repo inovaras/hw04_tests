@@ -1,7 +1,6 @@
 from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
-from django.conf import settings
 
 from ..models import User, Group, Post
 from ..consts import POSTS_NUMBERS
