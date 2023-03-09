@@ -5,14 +5,19 @@ from ..forms import PostForm
 from ..models import Group, Post, User
 
 
+AUTHOR = 'author'
+SLUG = 'slug'
+TEXT = 'Тут какой-то текст:)'
+
+
 class PostCreateFormTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username='author')
-        cls.group = Group.objects.create(slug='slug')
+        cls.user = User.objects.create_user(username=AUTHOR)
+        cls.group = Group.objects.create(slug=SLUG)
         cls.post = Post.objects.create(
-            text='Тут какой-то текст:)', author=cls.user, group=cls.group
+            text=TEXT, author=cls.user, group=cls.group
         )
         cls.form = PostForm()
 
@@ -23,7 +28,7 @@ class PostCreateFormTests(TestCase):
     def test_create_post(self):
         """Валидная форма создает новый пост."""
         posts_count = Post.objects.count()
-        form_data = {'text': 'Тестовый заголовок', 'group': self.group.pk}
+        form_data = {'text': TEXT, 'group': self.group.pk}
         response = self.authorized_client.post(
             reverse('posts:create'), data=form_data, follow=True
         )
@@ -33,11 +38,10 @@ class PostCreateFormTests(TestCase):
         )
         self.assertEqual(Post.objects.count(), posts_count + 1)
 
-        self.assertTrue(
-            Post.objects.filter(
-                text=form_data['text'], group=form_data['group']
-            ).exists()
-        )
+        post = Post.objects.first()
+        self.assertEqual(post.text, form_data['text'])
+        self.assertEqual(post.group, self.group)
+        self.assertEqual(post.author, self.user)
 
     def test_edit_post(self):
         """Валидная форма правит существующий пост"""
@@ -55,8 +59,7 @@ class PostCreateFormTests(TestCase):
         )
         self.assertEqual(Post.objects.count(), posts_count)
 
-        self.assertTrue(
-            Post.objects.filter(
-                text=form_data['text'], group=form_data['group']
-            ).exists()
-        )
+        post = Post.objects.first()
+        self.assertEqual(post.text, form_data['text'])
+        self.assertEqual(post.group, self.group)
+        self.assertEqual(post.author, self.user)

@@ -142,9 +142,6 @@ EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 print(EMAIL_FILE_PATH)
 print(EMAIL_BACKEND)
 
-# my config for the project
-POSTS_NUMBERS = 10
-
 # error 403
 CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 

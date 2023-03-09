@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 
 
 User = get_user_model()
+POST_TRUNCATE_NUMBER = 15
 
 
 class Group(models.Model):
@@ -50,4 +51,4 @@ class Post(models.Model):
         verbose_name_plural = 'Посты'
 
     def __str__(self):
-        return self.text[:15]
+        return self.text[:POST_TRUNCATE_NUMBER]

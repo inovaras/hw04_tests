@@ -3,14 +3,19 @@ from django.test import TestCase, Client
 from ..models import Group, Post, User
 
 
+USERNAME = 'author'
+SLUG = 'some_slug'
+TEXT = 'Проверочный текст'
+
+
 class PostURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username='author')
-        cls.group = Group.objects.create(slug='slug')
+        cls.user = User.objects.create_user(username=USERNAME)
+        cls.group = Group.objects.create(slug=SLUG)
         cls.post = Post.objects.create(
-            text='Проверочный текст', author=cls.user, group=cls.group
+            text=TEXT, author=cls.user, group=cls.group
         )
 
     def setUp(self):

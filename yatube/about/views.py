@@ -7,7 +7,7 @@ class AboutAuthorView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['github'] = 'Гитхаб: https://github.com/inovaras'
-        context['telegram'] = 'Телеграмм: https://github.com/inovaras'
+        context['telegram'] = 'Телеграмм: @inovaras'
         return context
 
 
