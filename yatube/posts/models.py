@@ -52,3 +52,27 @@ class Post(models.Model):
 
     def __str__(self):
         return self.text[:POST_TRUNCATE_NUMBER]
+
+
+class Comment(models.Model):
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Пост'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Автор'
+    )
+    text = models.TextField(
+        'Комментарии к посту',
+        help_text='Оставьте комментарий'
+    )
+    created = models.DateTimeField(
+        'Дата публикации комментария',
+        auto_now_add=True
+    )
+

@@ -4,10 +4,8 @@ from django.shortcuts import render
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
-from .forms import PostForm
-from .models import Group
-from .models import Post
-from .models import User
+from .forms import PostForm, CommentForm
+from .models import Group, Post, User, Comment
 from .consts import POSTS_NUMBERS
 
 
@@ -49,8 +47,10 @@ def profile(request, username):
 
 
 def post_detail(request, post_id):
+    form = CommentForm()
     post = Post.objects.get(id=post_id)
-    context = {'post': post, 'is_edit': True}
+    comments = post.comments.all()
+    context = {'post': post, 'is_edit': True, 'comments': comments, 'form': form}
     return render(request, 'posts/post_detail.html', context)
 
 
@@ -90,3 +90,15 @@ def post_edit(request, post_id):
         'is_edit': True,
     }
     return render(request, 'posts/create.html', context)
+
+
+@login_required
+def add_comment(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    form = CommentForm(request.POST or None)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = post
+        comment.save()
+        return redirect('posts:post_detail', post_id=post_id)
