@@ -3,7 +3,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django import forms
 
-from ..models import User, Group, Post
+from ..models import User, Group, Post, Comment
 from ..consts import POSTS_NUMBERS
 
 
@@ -36,6 +36,7 @@ class PostPagesTests(TestCase):
         cls.post = Post.objects.create(
             text=TEXT, author=cls.user, group=cls.group, image=uploaded
         )
+        cls.comment = Comment.objects.create(post=cls.post, author=cls.user, text=TEXT)
         cls.url_address_map = {
             'index': reverse('posts:index'),
             'group_list': reverse(
@@ -113,6 +114,8 @@ class PostPagesTests(TestCase):
         )
         post = response.context['post']
         self.check_context(post)
+        comment = response.context['comments'][0]
+        self.assertEqual(comment, self.comment)
 
     def test_post_create_show_correct_context(self):
         """Шаблон post_create сформирован с правильным контекстом."""
