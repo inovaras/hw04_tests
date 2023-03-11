@@ -1,5 +1,6 @@
 from django.test import Client, TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.cache import cache
 from django.urls import reverse
 from django import forms
 
@@ -149,6 +150,16 @@ class PostPagesTests(TestCase):
         posts = response.context['page_obj']
         self.assertEqual(len(posts), 0)
 
+    def test_cache_index_page(self):
+        """Проверка кеширования главной страницы"""
+        response = self.authorized_client.get(self.url_address_map['index'])
+        self.post.delete()
+        cached_response = self.authorized_client.get(self.url_address_map['index'])
+        self.assertEqual(response.content, cached_response.content)
+        cache.clear()
+        fresh_response = self.authorized_client.get(self.url_address_map['index'])
+        self.assertNotEqual(response.content, fresh_response.content)
+
 
 class PaginatorViewsTest(TestCase):
     @classmethod
@@ -175,6 +186,7 @@ class PaginatorViewsTest(TestCase):
         ]
 
     def setUp(self):
+        cache.clear()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 

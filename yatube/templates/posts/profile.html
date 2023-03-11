@@ -6,14 +6,28 @@
   <body>
     <main>
       <div class="container py-5">
-          <h1>Все посты пользователя {{author.username}} </h1>
-          <h3>Всего постов: {{author.posts.count}} </h3>
+          <div class="mb-5">
+            <h1>Все посты пользователя {{author.username}} </h1>
+            <h3>Всего постов: {{author.posts.count}} </h3>
+            {% if following %}
+              <a class="btn btn-lg btn-light"
+                href="{% url 'posts:profile_unfollow' author.username %}" role="button">
+                Отписаться
+              </a>
+            {% elif author.username != user.username %}
+              <a class="btn btn-lg btn-primary"
+                href="{% url 'posts:profile_follow' author.username %}" role="button">
+                Подписаться
+              </a>
+            {% endif %}
+          </div>
           {% for post in page_obj %}
            <article>
              {% include "includes/posts_rendering.html" with show_group_link=True %}
            </article>
            {% endfor %}
         {% include 'posts/includes/paginator.html' %}
+
       </div>
     </main>
   </body>
