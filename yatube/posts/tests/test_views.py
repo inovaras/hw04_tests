@@ -4,11 +4,12 @@ from django.core.cache import cache
 from django.urls import reverse
 from django import forms
 
-from ..models import User, Group, Post, Comment
+from ..models import User, Group, Post, Comment, Follow
 from ..consts import POSTS_NUMBERS
 
 
 USERNAME = 'author'
+ANOTHER_USERNAME = 'another_author'
 SLUG = 'slug'
 ANOTHER_SLUG = 'another_slug'
 TEXT = 'Тут какой-то текст:)'
@@ -27,17 +28,18 @@ class PostPagesTests(TestCase):
             b'\x0A\x00\x3B'
         )
         uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=small_gif,
-            content_type='image/gif'
+            name='small.gif', content=small_gif, content_type='image/gif'
         )
         cls.user = User.objects.create_user(username=USERNAME)
+        cls.another_user = User.objects.create_user(username=ANOTHER_USERNAME)
         cls.group = Group.objects.create(slug=SLUG)
         cls.another_group = Group.objects.create(slug=ANOTHER_SLUG)
         cls.post = Post.objects.create(
             text=TEXT, author=cls.user, group=cls.group, image=uploaded
         )
-        cls.comment = Comment.objects.create(post=cls.post, author=cls.user, text=TEXT)
+        cls.comment = Comment.objects.create(
+            post=cls.post, author=cls.user, text=TEXT
+        )
         cls.url_address_map = {
             'index': reverse('posts:index'),
             'group_list': reverse(
@@ -55,12 +57,24 @@ class PostPagesTests(TestCase):
             ),
             'another_group_list': reverse(
                 'posts:group_list', kwargs={'slug': cls.another_group.slug}
-            )
+            ),
+            'follow': reverse(
+                'posts:profile_follow',
+                kwargs={'username': cls.another_user.username},
+            ),
+            'unfollow': reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': cls.another_user.username},
+            ),
+            'follow_index': reverse('posts:follow_index'),
         }
 
     def setUp(self):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+
+        self.not_follower_client = Client()
+        self.not_follower_client.force_login(self.another_user)
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -71,7 +85,7 @@ class PostPagesTests(TestCase):
             self.url_address_map['profile']: 'posts/profile.html',
             self.url_address_map['post_detail']: 'posts/post_detail.html',
             self.url_address_map['create']: 'posts/create.html',
-            self.url_address_map['edit']: 'posts/create.html'
+            self.url_address_map['edit']: 'posts/create.html',
         }
 
         for reverse_name, template in templates_pages_names.items():
@@ -154,11 +168,50 @@ class PostPagesTests(TestCase):
         """Проверка кеширования главной страницы"""
         response = self.authorized_client.get(self.url_address_map['index'])
         self.post.delete()
-        cached_response = self.authorized_client.get(self.url_address_map['index'])
+        cached_response = self.authorized_client.get(
+            self.url_address_map['index']
+        )
         self.assertEqual(response.content, cached_response.content)
         cache.clear()
-        fresh_response = self.authorized_client.get(self.url_address_map['index'])
+        fresh_response = self.authorized_client.get(
+            self.url_address_map['index']
+        )
         self.assertNotEqual(response.content, fresh_response.content)
+
+    def test_authorized_client_can_follow_another_authors(self):
+        """Проверка что авторизованный пользователь может подписываться
+        на других пользователей и удалять их из подписок"""
+        follows_count = Follow.objects.count()
+        self.authorized_client.get(
+            self.url_address_map['follow'], args=(self.another_user,)
+        )
+        new_follows_count = Follow.objects.count()
+        self.assertEqual(new_follows_count, follows_count + 1)
+
+        self.assertTrue(
+            Follow.objects.filter(
+                user=self.user, author=self.another_user
+            ).exists()
+        )
+        self.authorized_client.get(
+            self.url_address_map['unfollow'], args=(self.another_user,)
+        )
+        new_follows_count_after_unfollow = Follow.objects.count()
+        self.assertEqual(new_follows_count_after_unfollow, follows_count)
+
+    def test_new_post_appear_in_followers_pages(self):
+        """Новая запись пользователя появляется в ленте тех,
+        кто на него подписан и не появляется в ленте тех, кто не подписан"""
+        post = Post.objects.create(text=TEXT, author=self.another_user)
+        Follow.objects.create(user=self.user, author=self.another_user)
+        response = self.authorized_client.get(
+            self.url_address_map['follow_index']
+        )
+        self.assertEqual(response.context['page_obj'][0], post)
+        response = self.not_follower_client.get(
+            self.url_address_map['follow_index']
+        )
+        self.assertEqual(len(response.context['page_obj']), 0)
 
 
 class PaginatorViewsTest(TestCase):
@@ -182,7 +235,7 @@ class PaginatorViewsTest(TestCase):
         cls.url_address_lst = [
             reverse('posts:index'),
             reverse('posts:group_list', kwargs={'slug': cls.group.slug}),
-            reverse('posts:profile', kwargs={'username': cls.user.username})
+            reverse('posts:profile', kwargs={'username': cls.user.username}),
         ]
 
     def setUp(self):
@@ -195,9 +248,7 @@ class PaginatorViewsTest(TestCase):
 
         for url_address in self.url_address_lst:
             response = self.client.get(url_address)
-            self.assertEqual(
-                len(response.context['page_obj']), POSTS_NUMBERS
-            )
+            self.assertEqual(len(response.context['page_obj']), POSTS_NUMBERS)
             response = self.client.get(url_address + '?page=2')
             self.assertEqual(
                 len(response.context['page_obj']), self.SECOND_PAGE_COUNT

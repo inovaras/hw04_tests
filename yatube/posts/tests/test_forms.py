@@ -50,9 +50,7 @@ class PostCreateFormTests(TestCase):
         """Валидная форма создает новый пост."""
         posts_count = Post.objects.count()
         uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=self.small_gif,
-            content_type='image/gif'
+            name='small.gif', content=self.small_gif, content_type='image/gif'
         )
         form_data = {'text': TEXT, 'group': self.group.pk, 'image': uploaded}
         response = self.authorized_client.post(
@@ -77,9 +75,13 @@ class PostCreateFormTests(TestCase):
         uploaded = SimpleUploadedFile(
             name='edited_small.gif',
             content=self.small_gif,
-            content_type='image/gif'
+            content_type='image/gif',
         )
-        form_data = {'text': 'Тестовый заголовок', 'group': self.group.pk, 'image': uploaded}
+        form_data = {
+            'text': 'Тестовый заголовок',
+            'group': self.group.pk,
+            'image': uploaded,
+        }
         response = self.authorized_client.post(
             reverse('posts:edit', kwargs={'post_id': self.post.id}),
             data=form_data,

@@ -33,7 +33,7 @@ class PostURLTests(TestCase):
             f'/profile/{cls.user.username}/': 'posts/profile.html',
             f'/posts/{cls.post.id}/': 'posts/post_detail.html',
             '/create/': 'posts/create.html',
-            f'/posts/{cls.post.id}/edit/': 'posts/create.html'
+            f'/posts/{cls.post.id}/edit/': 'posts/create.html',
         }
 
     def setUp(self):
@@ -54,7 +54,10 @@ class PostURLTests(TestCase):
 
     def test_url_access_for_authorized_only(self):
         """Страницы, доступные только авторизованным пользователям"""
-        for address, access, in self.access_url_address_map.items():
+        for (
+            address,
+            access,
+        ) in self.access_url_address_map.items():
             if access == 'authorized':
                 with self.subTest(address=address):
                     response = self.authorized_client.get(address)
@@ -62,7 +65,10 @@ class PostURLTests(TestCase):
 
     def test_url_access_for_all(self):
         """Страницы, доступные всем пользователям"""
-        for address, access, in self.access_url_address_map.items():
+        for (
+            address,
+            access,
+        ) in self.access_url_address_map.items():
             if access == 'all':
                 with self.subTest(address=address):
                     response = self.guest_client.get(address)
@@ -70,7 +76,10 @@ class PostURLTests(TestCase):
 
     def test_url_access_for_author_only(self):
         """Страницы, доступные только автору"""
-        for address, access, in self.access_url_address_map.items():
+        for (
+            address,
+            access,
+        ) in self.access_url_address_map.items():
             if access == 'author':
                 with self.subTest(address=address):
                     response = self.author_client.get(address)
